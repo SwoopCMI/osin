@@ -3,6 +3,7 @@ package osin
 import (
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -117,6 +118,14 @@ func (s *Server) HandleAuthorizeRequest(w *Response, r *http.Request) *Authorize
 	}
 	if ret.Client.GetRedirectUri() == "" {
 		w.SetErrorState(E_UNAUTHORIZED_CLIENT, "", ret.State)
+		return nil
+	}
+
+	scopeString := strings.TrimSpace(r.Form.Get("scope"))
+	scopeRequested := strings.Split(scopeString, ",")
+
+	if !ScopeContains(ret.Client.GetScope(), scopeRequested) {
+		w.SetErrorState(E_INVALID_SCOPE, "", ret.State)
 		return nil
 	}
 

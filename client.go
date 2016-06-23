@@ -11,6 +11,9 @@ type Client interface {
 	// Base client uri
 	GetRedirectUri() string
 
+	// List of scopes allowed to the client
+	GetScope() []string
+
 	// Data to be passed to storage. Not used by the library.
 	GetUserData() interface{}
 }
@@ -28,6 +31,7 @@ type DefaultClient struct {
 	Id          string
 	Secret      string
 	RedirectUri string
+	Scope       []string
 	UserData    interface{}
 }
 
@@ -45,6 +49,10 @@ func (d *DefaultClient) GetRedirectUri() string {
 
 func (d *DefaultClient) GetUserData() interface{} {
 	return d.UserData
+}
+
+func (d *DefaultClient) GetScope() []string {
+	return d.Scope
 }
 
 // Implement the ClientSecretMatcher interface

@@ -127,24 +127,37 @@ func (s *Server) HandleAccessRequest(w *Response, r *http.Request) *AccessReques
 		return nil
 	}
 
+	var ret *AccessRequest
+
 	grantType := AccessRequestType(r.Form.Get("grant_type"))
 	if s.Config.AllowedAccessTypes.Exists(grantType) {
 		switch grantType {
 		case AUTHORIZATION_CODE:
-			return s.handleAuthorizationCodeRequest(w, r)
+			ret = s.handleAuthorizationCodeRequest(w, r)
 		case REFRESH_TOKEN:
-			return s.handleRefreshTokenRequest(w, r)
+			ret = s.handleRefreshTokenRequest(w, r)
 		case PASSWORD:
-			return s.handlePasswordRequest(w, r)
+			ret = s.handlePasswordRequest(w, r)
 		case CLIENT_CREDENTIALS:
-			return s.handleClientCredentialsRequest(w, r)
+			ret = s.handleClientCredentialsRequest(w, r)
 		case ASSERTION:
-			return s.handleAssertionRequest(w, r)
+			ret = s.handleAssertionRequest(w, r)
+		}
+	} else {
+		w.SetError(E_UNSUPPORTED_GRANT_TYPE, "")
+	}
+
+	if ret != nil {
+		scopeString := strings.TrimSpace(r.Form.Get("scope"))
+		scopeRequested := strings.Split(scopeString, ",")
+
+		if !ScopeContains(ret.Client.GetScope(), scopeRequested) {
+			w.SetError(E_INVALID_SCOPE, "")
+			return nil
 		}
 	}
 
-	w.SetError(E_UNSUPPORTED_GRANT_TYPE, "")
-	return nil
+	return ret
 }
 
 func (s *Server) handleAuthorizationCodeRequest(w *Response, r *http.Request) *AccessRequest {
